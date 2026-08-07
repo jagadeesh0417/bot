@@ -1,4 +1,5 @@
 from pathlib import Path
+import tempfile
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,5 +35,10 @@ def register_global_middleware(app: FastAPI) -> None:
 def mount_static(app: FastAPI) -> None:
     app.mount("/static", StaticFiles(directory=settings.STATIC_DIR), name="static")
     uploads_dir = Path(settings.UPLOAD_DIR)
-    uploads_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        uploads_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        # Read-only filesystem (serverless) — mount an empty temp dir instead.
+        uploads_dir = Path(tempfile.gettempdir()) / "collegeai_uploads"
+        uploads_dir.mkdir(parents=True, exist_ok=True)
     app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")

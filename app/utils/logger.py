@@ -1,5 +1,6 @@
 import logging
 import sys
+import tempfile
 from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -7,10 +8,23 @@ from pathlib import Path
 from app.config.settings import settings
 
 
+def _writable_dir(preferred: str | Path) -> Path:
+    """Return a writable directory, falling back to the OS temp dir (serverless-safe)."""
+    candidates = [Path(preferred), Path(tempfile.gettempdir()) / "collegeai_logs"]
+    for candidate in candidates:
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            test_file = candidate / ".write_test"
+            test_file.touch()
+            test_file.unlink()
+            return candidate
+        except OSError:
+            continue
+    return candidates[-1]
+
+
 def _log_file(name: str) -> Path:
-    path = Path(settings.LOG_DIR)
-    path.mkdir(parents=True, exist_ok=True)
-    return path / f"{name}.log"
+    return _writable_dir(settings.LOG_DIR) / f"{name}.log"
 
 
 def setup_logger(name: str, level: int = logging.INFO) -> logging.Logger:
@@ -29,11 +43,15 @@ def setup_logger(name: str, level: int = logging.INFO) -> logging.Logger:
     console.setFormatter(formatter)
     logger.addHandler(console)
 
-    file_handler = RotatingFileHandler(
-        _log_file(name), maxBytes=5 * 1024 * 1024, backupCount=5, encoding="utf-8"
-    )
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
+    try:
+        file_handler = RotatingFileHandler(
+            _log_file(name), maxBytes=5 * 1024 * 1024, backupCount=5, encoding="utf-8"
+        )
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    except OSError:
+        # Read-only filesystem (e.g. serverless) — console logging only.
+        pass
 
     return logger
 

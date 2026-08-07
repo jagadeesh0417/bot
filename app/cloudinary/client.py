@@ -104,12 +104,22 @@ async def upload_file(file_content: bytes, filename: str, content_type: str, pur
 
 
 def _save_locally(file_content: bytes, filename: str, content_type: str, purpose: str) -> dict:
+    import tempfile
     import time
 
     from app.utils.helpers import clean_text
 
     safe_name = clean_text(filename).replace(" ", "_") or "file"
-    local_dir = Path(settings.UPLOAD_DIR) / purpose
+    base = Path(settings.UPLOAD_DIR)
+    try:
+        base.mkdir(parents=True, exist_ok=True)
+        test = base / ".write_test"
+        test.touch()
+        test.unlink()
+    except OSError:
+        base = Path(tempfile.gettempdir()) / "collegeai_uploads"
+        base.mkdir(parents=True, exist_ok=True)
+    local_dir = base / purpose
     local_dir.mkdir(parents=True, exist_ok=True)
     path = local_dir / f"{int(time.time() * 1000)}_{safe_name}"
     path.write_bytes(file_content)
