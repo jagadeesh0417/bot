@@ -15,11 +15,19 @@ function ThemeToggle({ theme, setTheme }) {
 
 const FEATURES = [
   { icon: "🤖", title: "AI Chatbot", desc: "Instant answers from your college's knowledge base with cited sources.", hash: "#/chat" },
-  { icon: "📢", title: "Notices & Events", desc: "Stay updated with notices, academic calendars and campus events.", hash: "#/notices" },
+  { icon: "📢", title: "Notices", desc: "Official announcements, exam alerts and pinned notices.", hash: "#/notices" },
+  { icon: "🎉", title: "Events", desc: "Workshops, seminars, sports and cultural events.", hash: "#/events" },
   { icon: "💼", title: "Placements", desc: "Track drives, eligibility and upcoming opportunities.", hash: "#/placements" },
-  { icon: "📚", title: "Knowledge Base", desc: "Upload prospectus, rules, syllabi and exam schedules as PDFs.", hash: "#/knowledge" },
-  { icon: "🗓️", title: "Timetables", desc: "Personalised class timetables by department and semester.", hash: "#/timetable" },
-  { icon: "📊", title: "Analytics", desc: "Admin dashboards with stats, trends and activity feeds.", hash: "#/admin" },
+  { icon: "📚", title: "Knowledge Base", desc: "Prospectus, rules, syllabi and exam schedules as PDFs.", hash: "#/knowledge" },
+  { icon: "🗓️", title: "Timetable", desc: "Personalised class timetables by department and semester.", hash: "#/timetable" },
+  { icon: "📖", title: "Courses", desc: "Browse courses, credits and enrol in your subjects.", hash: "#/courses" },
+  { icon: "👩‍🏫", title: "Faculty", desc: "Meet your professors — departments, designations and qualifications.", hash: "#/faculty" },
+  { icon: "🏛️", title: "Departments", desc: "Explore departments, heads and their stats.", hash: "#/departments" },
+  { icon: "🖼️", title: "Gallery", desc: "Campus photos and memories — like your favourites.", hash: "#/gallery" },
+  { icon: "🔍", title: "Search", desc: "One search across notices, courses, faculty and more.", hash: "#/search" },
+  { icon: "💬", title: "Feedback", desc: "Share your suggestions and ratings with the college.", hash: "#/feedback" },
+  { icon: "📊", title: "Analytics", desc: "Admin dashboard with stats, trends and activity.", hash: "#/admin", admin: true },
+  { icon: "🧑‍🎓", title: "Students", desc: "Manage students, enrolments and profiles.", hash: "#/students", admin: true },
 ];
 
 export default function Landing({ theme, setTheme }) {
@@ -85,7 +93,10 @@ export default function Landing({ theme, setTheme }) {
               style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 10 }}
               title={authed ? `Open ${f.title}` : "Sign in to open"}
             >
-              <div className="feature-icon">{f.icon}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div className="feature-icon">{f.icon}</div>
+                {f.admin && <span className="tag blue">admin</span>}
+              </div>
               <h3 style={{ margin: 0 }}>{f.title}</h3>
               <p style={{ margin: 0 }}>{f.desc}</p>
               <span style={{ color: "var(--accent)", fontSize: 13, fontWeight: 600, marginTop: "auto", paddingTop: 8 }}>
