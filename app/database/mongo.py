@@ -34,8 +34,16 @@ async def close_mongo_connection() -> None:
 
 
 def get_db() -> AsyncIOMotorDatabase:
+    global _client, _db
     if _db is None:
-        raise RuntimeError("Database not initialised. Call connect_to_mongo() first.")
+        # Lazy connect: works on serverless platforms where lifespan may not run.
+        _client = AsyncIOMotorClient(
+            settings.MONGODB_URL,
+            serverSelectionTimeoutMS=5000,
+            maxPoolSize=50,
+            connectTimeoutMS=10000,
+        )
+        _db = _client[settings.MONGODB_DB]
     return _db
 
 
