@@ -95,6 +95,17 @@ async def index():
     return FileResponse(index_path) if index_path.exists() else {"detail": "CollegeAI API is running. See /docs"}
 
 
+@app.get("/{path:path}", include_in_schema=False)
+async def spa_fallback(path: str):
+    """Serve the SPA for unknown page paths; keep JSON 404 for unknown API paths."""
+    if path.startswith("api/"):
+        from starlette.exceptions import HTTPException
+
+        raise HTTPException(status_code=404, detail="Not Found")
+    index_path = Path(settings.TEMPLATES_DIR) / "index.html"
+    return FileResponse(index_path) if index_path.exists() else {"detail": "Not Found"}
+
+
 @app.get("/health", tags=["System"], summary="Health check")
 async def health():
     from app.database.mongo import get_db
