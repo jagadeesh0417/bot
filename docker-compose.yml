@@ -1,0 +1,40 @@
+services:
+  mongodb:
+    image: mongo:7
+    restart: unless-stopped
+    container_name: collegeai-mongo
+    environment:
+      MONGO_INITDB_DATABASE: college_ai
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  app:
+    build: .
+    restart: unless-stopped
+    container_name: collegeai-app
+    depends_on:
+      - mongodb
+    environment:
+      MONGODB_URL: mongodb://mongodb:27017
+      MONGODB_DB: college_ai
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      AI_PROVIDER: ${AI_PROVIDER:-none}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@college.edu}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin@123456}
+    ports:
+      - "8000:8000"
+    volumes:
+      - app_logs:/app/logs
+      - app_uploads:/app/uploads
+
+volumes:
+  mongo_data:
+  app_logs:
+  app_uploads:
