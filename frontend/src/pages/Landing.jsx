@@ -1,4 +1,5 @@
 import React from "react";
+import { getToken } from "../api.js";
 
 function ThemeToggle({ theme, setTheme }) {
   return (
@@ -12,7 +13,18 @@ function ThemeToggle({ theme, setTheme }) {
   );
 }
 
+const FEATURES = [
+  { icon: "🤖", title: "AI Chatbot", desc: "Instant answers from your college's knowledge base with cited sources.", hash: "#/chat" },
+  { icon: "📢", title: "Notices & Events", desc: "Stay updated with notices, academic calendars and campus events.", hash: "#/notices" },
+  { icon: "💼", title: "Placements", desc: "Track drives, eligibility and upcoming opportunities.", hash: "#/placements" },
+  { icon: "📚", title: "Knowledge Base", desc: "Upload prospectus, rules, syllabi and exam schedules as PDFs.", hash: "#/knowledge" },
+  { icon: "🗓️", title: "Timetables", desc: "Personalised class timetables by department and semester.", hash: "#/timetable" },
+  { icon: "📊", title: "Analytics", desc: "Admin dashboards with stats, trends and activity feeds.", hash: "#/admin" },
+];
+
 export default function Landing({ theme, setTheme }) {
+  const authed = Boolean(getToken());
+  const link = (hash) => (authed ? hash : "#/login");
   return (
     <div className="landing">
       <nav className="nav glass">
@@ -65,19 +77,21 @@ export default function Landing({ theme, setTheme }) {
           <p>One intelligent platform for students, faculty and administration.</p>
         </div>
         <div className="features-grid">
-          {[
-            { icon: "🤖", title: "AI Chatbot", desc: "Instant answers from your college's knowledge base with cited sources." },
-            { icon: "📢", title: "Notices & Events", desc: "Stay updated with notices, academic calendars and campus events." },
-            { icon: "💼", title: "Placements", desc: "Track drives, eligibility and upcoming opportunities." },
-            { icon: "📚", title: "Knowledge Base", desc: "Upload prospectus, rules, syllabi and exam schedules as PDFs." },
-            { icon: "🗓️", title: "Timetables", desc: "Personalised class timetables by department and semester." },
-            { icon: "📊", title: "Analytics", desc: "Admin dashboards with stats, trends and activity feeds." },
-          ].map((f) => (
-            <div key={f.title} className="feature-card glass">
+          {FEATURES.map((f) => (
+            <a
+              key={f.title}
+              href={link(f.hash)}
+              className="feature-card glass"
+              style={{ textDecoration: "none", color: "inherit", display: "flex", flexDirection: "column", gap: 10 }}
+              title={authed ? `Open ${f.title}` : "Sign in to open"}
+            >
               <div className="feature-icon">{f.icon}</div>
-              <h3>{f.title}</h3>
-              <p>{f.desc}</p>
-            </div>
+              <h3 style={{ margin: 0 }}>{f.title}</h3>
+              <p style={{ margin: 0 }}>{f.desc}</p>
+              <span style={{ color: "var(--accent)", fontSize: 13, fontWeight: 600, marginTop: "auto", paddingTop: 8 }}>
+                {authed ? "Open →" : "Sign in to explore →"}
+              </span>
+            </a>
           ))}
         </div>
       </section>
