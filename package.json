@@ -1,0 +1,30 @@
+{
+  "name": "college-ai",
+  "version": "1.0.0",
+  "description": "CollegeAI - Intelligent College Assistant (Express + React + Python AI)",
+  "type": "module",
+  "main": "api/index.js",
+  "scripts": {
+    "dev": "node api/index.js",
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
+    "start": "node api/index.js",
+    "test": "node tests/smoke.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.5.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.12.0",
+    "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "mongodb-memory-server": "^11.2.0",
+    "supertest": "^7.2.2"
+  }
+}

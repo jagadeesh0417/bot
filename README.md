@@ -1,8 +1,8 @@
 # 🎓 CollegeAI — Intelligent College Assistant
 
-A production-ready full-stack college management platform with an AI chatbot that answers **only from official college documents**. Built with **FastAPI + MongoDB (Motor) + JWT + Cloudinary + OpenAI/Gemini**, and a premium responsive glassmorphism UI.
+A production-ready full-stack college management platform with an AI chatbot that answers **only from official college documents**. Built with **Express.js (Node) + MongoDB + JWT + Cloudinary + React.js**, with a **Python (FastAPI) AI service** for the chatbot and knowledge base — all deployed on Vercel.
 
-> No fake data, no placeholders — every module is fully implemented and tested (12 smoke tests passing).
+> No fake data, no placeholders — every module is fully implemented and tested (17 Node smoke tests + 12 Python tests passing).
 
 ---
 
@@ -33,28 +33,24 @@ A production-ready full-stack college management platform with an AI chatbot tha
 
 ```
 college_ai/
-├── app/
-│   ├── main.py                 # FastAPI app factory, lifespan, middleware
-│   ├── config/settings.py      # Environment configuration (pydantic-settings)
-│   ├── database/mongo.py       # Motor async client + indexes
-│   ├── models/base.py          # Exceptions + MongoModel helpers
-│   ├── schemas/                # Pydantic validation (auth, modules, chat, common)
-│   ├── routers/                # 18 API routers (auth, students, faculty, chat…)
-│   ├── services/auth_service.py
-│   ├── authentication/security.py   # JWT + bcrypt
-│   ├── middleware/             # auth dependencies, rate limit, error handlers, CORS
-│   ├── chatbot/engine.py       # Sessions, history, retrieval-augmented chat
-│   ├── knowledgebase/processor.py  # PDF extraction, chunking, embeddings, scoring
-│   ├── cloudinary/client.py    # Upload/delete/replace, local fallback
-│   ├── utils/                  # logger, helpers (pagination, sanitize, serialize)
-│   ├── templates/index.html    # SPA
-│   └── static/css/style.css + js/app.js   # Premium UI
-├── logs/                       # Rotating app/auth/ai/error/mongo/upload logs
-├── uploads/                    # Local fallback storage
-├── tests/test_api.py           # 12 smoke tests (mongomock, no Mongo required)
-├── requirements.txt  ·  Dockerfile  ·  docker-compose.yml
-├── .env.example  ·  .gitignore  ·  pytest.ini
-└── main.py                     # uvicorn entry point
+├── api/
+│   ├── index.js                # Express app (Vercel Node function) — all REST APIs + SPA
+│   └── ai.py                   # Python AI function — /api/chat + /api/knowledge
+├── src/                        # Express backend
+│   ├── app.js                  # App assembly, middleware, error handling
+│   ├── db.js                   # MongoDB connection (lazy, SRV fallback)
+│   ├── auth.js                 # JWT + bcrypt + refresh rotation + admin bootstrap
+│   ├── upload.js               # Multer + Cloudinary (data-URL fallback)
+│   └── routes/                 # auth, catalog (students/faculty/departments/courses), content (notices/events/placements/gallery/timetable), system (dashboard/search/feedback/notifications/settings/uploads)
+├── frontend/                   # React.js SPA (Vite) → builds into public/
+├── public/                     # Built SPA (served by Express)
+├── app/                        # Python AI engine (chatbot, knowledge base, PDF processing)
+├── tests/
+│   ├── smoke.test.mjs          # 17 Express end-to-end tests
+│   └── test_api.py             # 12 Python tests (mongomock)
+├── vercel.json                 # Rewrites: /api/chat + /api/knowledge → Python, rest → Express
+├── package.json  ·  requirements.txt  ·  .env.example  ·  .gitignore
+└── main.py                     # (legacy) FastAPI entry for local AI-service use
 ```
 
 ---
@@ -62,20 +58,21 @@ college_ai/
 ## 🚀 Quick Start (Windows / Linux / macOS)
 
 ### 1. Prerequisites
-- Python **3.11+**
+- Node **20+** and Python **3.11+**
 - MongoDB (local, Atlas, or via docker-compose)
 - Cloudinary account (optional — falls back to local uploads)
 - OpenAI or Gemini API key (optional — template answers without it)
 
-### 2. Install
+### 2. Install & run
 
 ```bash
-cd college_ai
-python -m venv venv
-# Windows:  venv\Scripts\activate
-# Linux:    source venv/bin/activate
-pip install -r requirements.txt
+npm install                  # Express backend deps
+cd frontend && npm install   # React deps
+cd ..
+npm run dev                  # http://localhost:3000
 ```
+
+The React app is already built into `public/` (rebuild with `npm --prefix frontend run build`). The Python AI service runs separately on Vercel (`/api/ai`); for local AI testing use `python main.py` (port 8000) — Vercel routes `/api/chat` and `/api/knowledge` to the Python function.
 
 ### 3. Configure
 
@@ -84,25 +81,15 @@ copy .env.example .env        # Windows
 # cp .env.example .env        # Linux/macOS
 ```
 
-Edit `.env` and set at minimum: `MONGODB_URL`, `SECRET_KEY` (32+ random chars). Add Cloudinary and AI keys for full features.
+Edit `.env` and set at minimum: `MONGODB_URL`, `SECRET_KEY`. Add Cloudinary and AI keys for full features.
 
-### 4. Run
+Default admin is bootstrapped from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env`.
 
-```bash
-python main.py                 # http://localhost:8000
-# or
-uvicorn app.main:app --reload
-```
-
-- **App**: http://localhost:8000
-- **Swagger API docs**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
-- Default admin is bootstrapped from `ADMIN_EMAIL` / `ADMIN_PASSWORD` in `.env`.
-
-### 5. Run tests
+### 4. Run tests
 
 ```bash
-python -m pytest tests -q      # uses mongomock — no MongoDB needed
+npm test                     # 17 Express E2E tests (uses MONGODB_URL from .env, or in-memory Mongo)
+python -m pytest tests -q    # 12 Python tests (mongomock — no MongoDB needed)
 ```
 
 ---
@@ -121,12 +108,22 @@ docker build -t collegeai .
 docker run -p 8000:8000 --env-file .env collegeai
 ```
 
-## ☁️ Render / Railway
+## ☁️ Vercel Deployment
 
-1. Point the service at the repo root; build command `pip install -r requirements.txt`.
-2. Add a MongoDB Atlas URL as `MONGODB_URL`.
-3. Add `SECRET_KEY`, `CLOUDINARY_*`, `OPENAI_API_KEY` as environment variables.
-4. Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT` (Render) or default 8000 (Railway).
+1. Push this repo to GitHub and import it in Vercel (or use the CLI from this folder).
+2. **Project → Settings → Deployment Protection: off** (so visitors don't hit a login wall).
+3. **Project → Settings → Environment Variables** — set at minimum:
+
+| Variable | Example |
+|---|---|
+| `MONGODB_URL` | `mongodb+srv://user:pass@cluster.mongodb.net` (SRV works on Vercel) |
+| `MONGODB_DB` | `college_ai` |
+| `SECRET_KEY` | long random string |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | optional, image uploads |
+| `AI_PROVIDER` / `OPENAI_API_KEY` / `GEMINI_API_KEY` | optional, AI answers |
+| `ADMIN_EMAIL` / `ADMIN_PASSWORD` | bootstrap admin |
+
+Routing: `/api/chat/*` and `/api/knowledge/*` run on the Python function (`api/ai.py`), everything else on the Express function (`api/index.js`), and the React SPA is served by Express from `public/`.
 
 ---
 
