@@ -32,28 +32,42 @@ function cleanUser(user) {
 
 router.post("/register", async (req, res) => {
   const { name, email, password, studentId, department, semester, rememberMe } = req.body || {};
+  console.log("[register] request received");
   if (!name || !String(name).trim()) throw { status: 400, message: "Name is required" };
   if (!email || !EMAIL_RE.test(email)) throw { status: 400, message: "Valid email is required" };
   if (!PASSWORD_OK(password)) throw { status: 400, message: "Password must be 8+ characters and contain a number" };
+  console.log("[register] validation passed");
   await withDb(async (db) => {
     const exists = await db.collection("users").findOne({ email: String(email).toLowerCase() });
     if (exists) throw { status: 409, message: "An account with this email already exists" };
-    const result = await db.collection("users").insertOne({
-      name: String(name).trim(),
-      email: String(email).toLowerCase(),
-      role: "student",
-      passwordHash: hashPassword(password),
-      refreshTokenHashes: [],
-      studentId: studentId ? String(studentId).trim() : null,
-      department: department ? String(department).trim() : null,
-      semester: semester ? Number(semester) : null,
-      status: "active",
-      createdAt: now(),
-      updatedAt: now(),
-    });
-    const user = await db.collection("users").findOne({ _id: result.insertedId });
+    console.log("[register] email free, hashing password");
+    let insertedId;
+    try {
+      const result = await db.collection("users").insertOne({
+        name: String(name).trim(),
+        email: String(email).toLowerCase(),
+        role: "student",
+        passwordHash: hashPassword(password),
+        refreshTokenHashes: [],
+        studentId: studentId ? String(studentId).trim() : null,
+        department: department ? String(department).trim() : null,
+        semester: semester ? Number(semester) : null,
+        status: "active",
+        createdAt: now(),
+        updatedAt: now(),
+      });
+      insertedId = result.insertedId;
+    } catch (e) {
+      if (e && (e.code === 11000 || /duplicate key/i.test(String(e.message)))) {
+        throw { status: 409, message: "An account with this email already exists" };
+      }
+      console.error("[register] insert failed:", e?.message || e);
+      throw e;
+    }
+    console.log("[register] user created");
+    const user = await db.collection("users").findOne({ _id: insertedId });
     await db.collection("students").insertOne({
-      userId: result.insertedId,
+      userId: insertedId,
       name: user.name,
       email: user.email,
       studentId: user.studentId,
@@ -63,6 +77,7 @@ router.post("/register", async (req, res) => {
       updatedAt: now(),
     });
     const tokens = await issueTokens(user);
+    console.log("[register] success for", user.email);
     res.status(201).json({ success: true, data: { user: cleanUser(user), tokens } });
   });
 });

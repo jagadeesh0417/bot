@@ -62,14 +62,19 @@ export async function connectDb() {
     throw new Error("MONGODB_URL is not set in Vercel environment variables");
   }
   connecting = (async () => {
-    client = await makeClient(url);
-    db = client.db(name);
     try {
-      await createIndexes();
+      client = await makeClient(url);
+      db = client.db(name);
+      try {
+        await createIndexes();
+      } catch (e) {
+        /* index creation is best-effort */
+      }
+      return db;
     } catch (e) {
-      /* index creation is best-effort */
+      connecting = null;
+      throw e;
     }
-    return db;
   })();
   return connecting;
 }

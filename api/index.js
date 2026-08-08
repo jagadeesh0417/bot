@@ -1,21 +1,25 @@
-import { createApp, ready } from "../src/app.js";
-import { connectDb } from "../src/db.js";
+let app = null;
 
-const app = createApp();
-
-const port = process.env.PORT || 3000;
-
-if (process.env.VERCEL !== "1") {
-  ready().then(() => {
-    app.listen(port, () => console.log(`CollegeAI listening on http://localhost:${port}`));
-  });
-} else {
-  export default async function handler(req, res) {
+export default async function handler(req, res) {
+  if (!app) {
     try {
-      await connectDb();
+      const { createApp } = await import("../src/app.js");
+      app = createApp();
     } catch (e) {
-      /* DB will be connected lazily per-request */
+      res.status(500).json({ success: false, error: `Module load failed: ${e?.message || e}` });
+      return;
     }
+  }
+  try {
+    const { connectDb } = await import("../src/db.js");
+    await connectDb();
+  } catch (e) {
+    /* DB connected lazily per request */
+  }
+  try {
     return app(req, res);
+  } catch (e) {
+    if (res.headersSent) throw e;
+    res.status(500).json({ success: false, error: `Handler error: ${e?.message || e}` });
   }
 }
