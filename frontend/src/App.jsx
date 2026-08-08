@@ -28,7 +28,7 @@ function useHashRoute() {
 }
 
 function applyTheme() {
-  const saved = localStorage.getItem("ca_theme") || "dark";
+  const saved = localStorage.getItem("ca_theme") || "light";
   document.documentElement.setAttribute("data-theme", saved);
   return saved;
 }
