@@ -7,6 +7,7 @@ const router = Router();
 
 router.get("/health", async (req, res) => {
   let mongo = "disconnected";
+  let detail = "";
   try {
     await withDb(async (db) => {
       await db.command({ ping: 1 });
@@ -14,8 +15,9 @@ router.get("/health", async (req, res) => {
     });
   } catch (e) {
     mongo = "disconnected";
+    detail = e.message;
   }
-  res.json({ status: "ok", app: process.env.APP_NAME || "CollegeAI", mongo });
+  res.json({ status: "ok", app: process.env.APP_NAME || "CollegeAI", mongo, detail });
 });
 
 /* ---------------- Dashboard ---------------- */

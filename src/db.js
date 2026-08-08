@@ -26,7 +26,7 @@ async function resolveSrvViaSystem(url) {
 }
 
 async function makeClient(url) {
-  const opts = { serverSelectionTimeoutMS: 10000 };
+  const opts = { serverSelectionTimeoutMS: 4000 };
   try {
     const c = new MongoClient(url, opts);
     await c.connect();
@@ -44,6 +44,11 @@ async function makeClient(url) {
         /* fallback failed */
       }
     }
+    if (process.env.VERCEL === "1") {
+      throw new Error(
+        `Database unreachable (${e.message}). Set MONGODB_URL in Vercel env and allow access from anywhere (0.0.0.0/0) in Atlas Network Access.`
+      );
+    }
     throw e;
   }
 }
@@ -53,6 +58,9 @@ export async function connectDb() {
   if (connecting) return connecting;
   const url = process.env.MONGODB_URL || "mongodb://localhost:27017";
   const name = process.env.MONGODB_DB || "college_ai";
+  if (process.env.VERCEL === "1" && !process.env.MONGODB_URL) {
+    throw new Error("MONGODB_URL is not set in Vercel environment variables");
+  }
   connecting = (async () => {
     client = await makeClient(url);
     db = client.db(name);
